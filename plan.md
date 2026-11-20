@@ -33,13 +33,13 @@ Note: Requires explicit user sign-off.
 Checklist:
 - [x] Create AGENTS.md describing the architecture, folder layout, local commands, and coding standards.
 - [x] Expand plan.md with detailed checklists, test expectations, and success criteria per part.
-- [ ] Present the finalized plan to the user for explicit approval before implementation.
+- [x] Present the finalized plan to the user for explicit approval before implementation.
 
 Tests and verification:
 - [x] AGENTS.md and plan.md are readable, and every part has a checklist, test verification steps, and success criteria.
 
 Success criteria:
-- [ ] The user approves the sequence and plan structure.
+- [x] The user approves the sequence and plan structure.
 
 ---
 
@@ -47,25 +47,25 @@ Success criteria:
 Purpose: Create the local runtime foundation, monorepo workspaces, scripts, and baseline health checks.
 
 Checklist:
-- [ ] Initialize pnpm workspace with `apps/web` and `apps/api`.
-- [ ] Configure Biome for linting and formatting across root and apps.
-- [ ] Add Docker Compose configuration for `api`, `web`, `postgres`, and `redis`.
-- [ ] Provide cross-platform start and stop scripts in `scripts/`:
+- [x] Initialize pnpm workspace with `apps/web` and `apps/api`.
+- [x] Configure Biome for linting and formatting across root and apps.
+- [x] Add Docker Compose configuration for `api`, `web`, `postgres`, and `redis`.
+- [x] Provide cross-platform start and stop scripts in `scripts/`:
   - `scripts/start.sh` and `scripts/stop.sh` (macOS/Linux).
   - `scripts/start.bat` and `scripts/stop.bat` (Windows).
   - Add native local service fallback for environments without Docker.
-- [ ] Add root `package.json` scripts: `pnpm dev`, `pnpm build`, `pnpm test`, `pnpm test:e2e`, `pnpm test:load`.
-- [ ] Add a `/health` endpoint to Fastify checking Postgres and Redis connectivity.
-- [ ] Add a minimal home page in `apps/web` that verifies API and service health.
+- [x] Add root `package.json` scripts: `pnpm dev`, `pnpm build`, `pnpm test`, `pnpm test:e2e`, `pnpm test:load`.
+- [x] Add a `/health` endpoint to Fastify checking Postgres and Redis connectivity.
+- [x] Add a minimal home page in `apps/web` that verifies API and service health.
 
 Tests and verification:
-- [ ] `pnpm install` and `pnpm build` succeed cleanly.
-- [ ] Services boot cleanly via start script.
-- [ ] `GET /health` returns HTTP 200 with Postgres and Redis healthy.
-- [ ] Biome check passes cleanly without formatting or lint errors.
+- [x] `pnpm install` and `pnpm build` succeed cleanly.
+- [x] Services boot cleanly via start script.
+- [x] `GET /health` returns HTTP 200 with Postgres and Redis healthy.
+- [x] Biome check passes cleanly without formatting or lint errors.
 
 Success criteria:
-- [ ] The full stack runs locally with a single command and reports healthy.
+- [x] The full stack runs locally with a single command and reports healthy.
 
 ---
 

@@ -1,0 +1,22 @@
+{
+  "name": "event-ticketing-platform",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @event-platform/api --filter @event-platform/web dev",
+    "dev:api": "pnpm --filter @event-platform/api dev",
+    "dev:web": "pnpm --filter @event-platform/web dev",
+    "build": "pnpm --filter @event-platform/api build && pnpm --filter @event-platform/web build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "pnpm --filter @event-platform/api test",
+    "test:e2e": "pnpm --filter @event-platform/web test:e2e",
+    "test:load": "echo 'Part 11 will configure k6 load testing'"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "typescript": "^5.7.3"
+  }
+}
