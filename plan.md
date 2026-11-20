@@ -94,22 +94,22 @@ Success criteria:
 Purpose: Enable organizers to configure events and generate physical/logical seat maps.
 
 Checklist:
-- [ ] Organizer API endpoints to create and edit events (title, description, venue, date, price tiers).
-- [ ] Seat layout generator: sections, rows, and seats, with a price tier per section.
-- [ ] Generate individual seat records from layout definition (sections x rows x seats).
-- [ ] Public API endpoints to list published events and fetch event details with seat inventory.
-- [ ] Web application pages:
+- [x] Organizer API endpoints to create and edit events (title, description, venue, date, price tiers).
+- [x] Seat layout generator: sections, rows, and seats, with a price tier per section.
+- [x] Generate individual seat records from layout definition (sections x rows x seats).
+- [x] Public API endpoints to list published events and fetch event details with seat inventory.
+- [x] Web application pages:
   - Organizer event creation and layout configuration form.
   - Public event catalog with cards and event detail page.
   - Initial SVG seat layout visualization.
 
 Tests and verification:
-- [ ] Creating an event with sections generates the exact expected count of seat rows.
-- [ ] Public catalog returns only published events.
-- [ ] Layout coordinates (`row_label`, `seat_number`) are unique per section.
+- [x] Creating an event with sections generates the exact expected count of seat rows.
+- [x] Public catalog returns only published events.
+- [x] Layout coordinates (`row_label`, `seat_number`) are unique per section.
 
 Success criteria:
-- [ ] An organizer can create an event with a layout, and an attendee can view the published seat map.
+- [x] An organizer can create an event with a layout, and an attendee can view the published seat map.
 
 ---
 

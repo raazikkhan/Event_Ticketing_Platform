@@ -1,6 +1,22 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '../context/auth-context';
+
+interface EventItem {
+  id: string;
+  title: string;
+  description: string;
+  venueName: string;
+  venueAddress: string;
+  eventDate: string;
+  status: string;
+  isHighDemand: boolean;
+  minPrice: number;
+  maxPrice: number;
+  totalSeats: number;
+}
 
 interface HealthState {
   status: string;
@@ -12,169 +28,235 @@ interface HealthState {
   };
 }
 
-export default function HomePage() {
-  const [health, setHealth] = useState<HealthState | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-  const checkHealth = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+function formatPrice(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+export default function HomePage() {
+  const { user } = useAuth();
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [health, setHealth] = useState<HealthState | null>(null);
+  const [loadingHealth, setLoadingHealth] = useState(true);
+  const [seeding, setSeeding] = useState(false);
+
+  const fetchHealth = useCallback(async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const res = await fetch(`${apiUrl}/health`);
+      setLoadingHealth(true);
+      const res = await fetch(`${API_BASE}/health`);
       const data = await res.json();
       setHealth(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reach API server');
+    } catch {
+      setHealth(null);
     } finally {
-      setLoading(false);
+      setLoadingHealth(false);
+    }
+  }, []);
+
+  const fetchEvents = useCallback(async () => {
+    try {
+      setLoadingEvents(true);
+      const res = await fetch(`${API_BASE}/api/events`);
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(data.events || []);
+      }
+    } finally {
+      setLoadingEvents(false);
     }
   }, []);
 
   useEffect(() => {
-    checkHealth();
-  }, [checkHealth]);
+    fetchHealth();
+    fetchEvents();
+  }, [fetchHealth, fetchEvents]);
+
+  const handleSeedDemo = async () => {
+    setSeeding(true);
+    try {
+      await fetch(`${API_BASE}/api/events/seed-demo`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      await fetchEvents();
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   return (
     <main className="max-w-5xl mx-auto px-6 py-12">
-      {/* Header */}
-      <div className="border-b border-[#334155] pb-8 mb-8">
-        <div className="flex items-center justify-between">
+      {/* Hero Banner */}
+      <div className="border-b border-[#334155] pb-8 mb-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-[#F1F5F9]">
-              Event Ticketing Platform
+              Live Events & Seat Reservations
             </h1>
-            <p className="mt-2 text-[#94A3B8]">
-              High-concurrency reservation engine with zero double-booking guarantee.
+            <p className="mt-2 text-[#94A3B8] max-w-xl text-sm leading-relaxed">
+              Select seats on real-time SVG maps with guaranteed zero double-bookings under
+              concurrent demand.
             </p>
           </div>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#6366F1]/20 text-[#6366F1] border border-[#6366F1]/30">
-            MVP Engine
-          </span>
+          <div className="flex items-center gap-3">
+            {user?.role === 'organizer' && (
+              <Link
+                href="/organizer/events/new"
+                className="px-4 py-2 bg-[#6366F1] hover:bg-[#6366F1]/90 text-white text-xs font-semibold rounded-lg transition"
+              >
+                + Create Event
+              </Link>
+            )}
+            {events.length === 0 && !loadingEvents && (
+              <button
+                type="button"
+                onClick={handleSeedDemo}
+                disabled={seeding}
+                className="px-3.5 py-2 bg-[#334155] hover:bg-[#475569] text-[#F1F5F9] text-xs font-semibold rounded-lg transition disabled:opacity-50"
+              >
+                {seeding ? 'Seeding Demo Event...' : 'Load Sample Concert'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* System Status Panel */}
-      <section className="bg-[#1E293B] border border-[#334155] rounded-xl p-6 mb-8 shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[#F1F5F9]">System Health Status</h2>
-          <button
-            type="button"
-            onClick={checkHealth}
-            className="px-3 py-1.5 text-xs font-medium bg-[#334155] hover:bg-[#475569] text-[#F1F5F9] rounded transition"
-          >
-            Refresh Status
-          </button>
+      {/* Published Events Catalog */}
+      <section className="mb-12">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-[#F1F5F9]">Upcoming Events</h2>
+          <span className="text-xs text-[#94A3B8]">
+            {events.length} {events.length === 1 ? 'event' : 'events'} available
+          </span>
         </div>
 
-        {loading && <p className="text-sm text-[#94A3B8]">Querying /health endpoint...</p>}
-
-        {error && (
-          <div className="bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444] rounded-lg p-4 text-sm">
-            <strong>Connection Notice:</strong> {error}
-            <div className="text-xs text-[#94A3B8] mt-1">
-              Ensure the Fastify API server is running on port 4000.
+        {loadingEvents ? (
+          <div className="bg-[#1E293B] border border-[#334155] rounded-xl p-8 text-center text-sm text-[#94A3B8]">
+            Loading scheduled events...
+          </div>
+        ) : events.length === 0 ? (
+          <div className="bg-[#1E293B] border border-[#334155] rounded-xl p-10 text-center">
+            <h3 className="text-base font-semibold text-[#F1F5F9] mb-1">No Published Events Yet</h3>
+            <p className="text-xs text-[#94A3B8] max-w-md mx-auto mb-6">
+              Create your first event from the organizer dashboard or load the sample orchestral
+              showcase.
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={handleSeedDemo}
+                disabled={seeding}
+                className="px-4 py-2 bg-[#6366F1] hover:bg-[#6366F1]/90 text-white text-xs font-semibold rounded-lg transition"
+              >
+                {seeding ? 'Seeding...' : 'Load Demo Showcase'}
+              </button>
             </div>
           </div>
-        )}
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {events.map((evt) => (
+              <div
+                key={evt.id}
+                className="bg-[#1E293B] border border-[#334155] hover:border-[#6366F1]/50 rounded-xl p-6 transition flex flex-col justify-between shadow-lg"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <h3 className="text-lg font-bold text-[#F1F5F9] line-clamp-1">{evt.title}</h3>
+                    {evt.isHighDemand && (
+                      <span className="shrink-0 text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30">
+                        High Demand
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-[#94A3B8] line-clamp-2 mb-4 leading-relaxed">
+                    {evt.description}
+                  </p>
 
-        {health && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-[#0F172A] border border-[#334155] rounded-lg p-4">
-              <span className="text-xs font-medium text-[#94A3B8] uppercase">API Status</span>
-              <div className="mt-2 flex items-center gap-2">
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    health.status === 'ok' ? 'bg-[#22C55E]' : 'bg-[#EF4444]'
-                  }`}
-                />
-                <span className="text-sm font-semibold capitalize text-[#F1F5F9]">
-                  {health.status}
-                </span>
-              </div>
-              <p className="text-xs text-[#94A3B8] mt-1">Uptime: {health.uptimeSeconds ?? 0}s</p>
-            </div>
+                  <div className="space-y-1.5 text-xs text-[#94A3B8] mb-6">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">Venue:</span>
+                      <span className="text-[#F1F5F9] font-medium">{evt.venueName}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">Date:</span>
+                      <span className="text-[#F1F5F9] font-medium">
+                        {new Date(evt.eventDate).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">Capacity:</span>
+                      <span className="text-[#F1F5F9] font-medium">{evt.totalSeats} seats</span>
+                    </div>
+                  </div>
+                </div>
 
-            <div className="bg-[#0F172A] border border-[#334155] rounded-lg p-4">
-              <span className="text-xs font-medium text-[#94A3B8] uppercase">PostgreSQL</span>
-              <div className="mt-2 flex items-center gap-2">
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    health.services?.database?.healthy ? 'bg-[#22C55E]' : 'bg-[#EF4444]'
-                  }`}
-                />
-                <span className="text-sm font-semibold text-[#F1F5F9]">
-                  {health.services?.database?.healthy ? 'Connected' : 'Unavailable'}
-                </span>
+                <div className="pt-4 border-t border-[#334155] flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase text-[#94A3B8] block">Price from</span>
+                    <span className="text-sm font-bold text-[#F1F5F9]">
+                      {formatPrice(evt.minPrice)}
+                      {evt.maxPrice > evt.minPrice && ` - ${formatPrice(evt.maxPrice)}`}
+                    </span>
+                  </div>
+                  <Link
+                    href={`/events/${evt.id}`}
+                    className="px-4 py-2 bg-[#6366F1] hover:bg-[#6366F1]/90 text-white text-xs font-semibold rounded-lg transition"
+                  >
+                    Select Seats &rarr;
+                  </Link>
+                </div>
               </div>
-              <p className="text-xs text-[#94A3B8] mt-1">
-                {health.services?.database?.latencyMs !== undefined
-                  ? `Latency: ${health.services.database.latencyMs}ms`
-                  : health.services?.database?.error || 'Source of truth'}
-              </p>
-            </div>
-
-            <div className="bg-[#0F172A] border border-[#334155] rounded-lg p-4">
-              <span className="text-xs font-medium text-[#94A3B8] uppercase">
-                Redis Cache & Locks
-              </span>
-              <div className="mt-2 flex items-center gap-2">
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    health.services?.redis?.healthy ? 'bg-[#22C55E]' : 'bg-[#EF4444]'
-                  }`}
-                />
-                <span className="text-sm font-semibold text-[#F1F5F9]">
-                  {health.services?.redis?.healthy ? 'Connected' : 'Unavailable'}
-                </span>
-              </div>
-              <p className="text-xs text-[#94A3B8] mt-1">
-                {health.services?.redis?.latencyMs !== undefined
-                  ? `Latency: ${health.services.redis.latencyMs}ms`
-                  : health.services?.redis?.error || 'Atomic holds & queues'}
-              </p>
-            </div>
+            ))}
           </div>
         )}
       </section>
 
-      {/* Seat State Legend Preview */}
-      <section className="bg-[#1E293B] border border-[#334155] rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-[#F1F5F9] mb-4">Seat State Design Tokens</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="flex items-center gap-3 bg-[#0F172A] p-3 rounded-lg border border-[#334155]">
-            <div className="w-6 h-6 rounded bg-[#334155] border border-slate-500" />
-            <div>
-              <div className="text-xs font-medium text-[#F1F5F9]">Available</div>
-              <div className="text-[10px] text-[#94A3B8]">#334155</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 bg-[#0F172A] p-3 rounded-lg border border-[#334155]">
-            <div className="w-6 h-6 rounded bg-[#6366F1]" />
-            <div>
-              <div className="text-xs font-medium text-[#F1F5F9]">Selected</div>
-              <div className="text-[10px] text-[#94A3B8]">#6366F1</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 bg-[#0F172A] p-3 rounded-lg border border-[#334155]">
-            <div className="w-6 h-6 rounded bg-[#F59E0B]" />
-            <div>
-              <div className="text-xs font-medium text-[#F1F5F9]">Held</div>
-              <div className="text-[10px] text-[#94A3B8]">#F59E0B</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 bg-[#0F172A] p-3 rounded-lg border border-[#334155]">
-            <div className="w-6 h-6 rounded bg-[#475569] opacity-50" />
-            <div>
-              <div className="text-xs font-medium text-[#F1F5F9]">Sold</div>
-              <div className="text-[10px] text-[#94A3B8]">#475569</div>
-            </div>
-          </div>
+      {/* System Status Panel */}
+      <section className="bg-[#1E293B] border border-[#334155] rounded-xl p-6 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#94A3B8]">
+            Platform Infrastructure Health
+          </h2>
+          <button
+            type="button"
+            onClick={fetchHealth}
+            className="text-xs text-[#6366F1] hover:underline"
+          >
+            Check status
+          </button>
         </div>
+
+        {health && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-[#0F172A] p-3 rounded-lg border border-[#334155]">
+              <span className="text-[10px] text-[#94A3B8] uppercase block">Fastify API</span>
+              <span className="text-xs font-semibold text-[#22C55E]">Operational</span>
+            </div>
+            <div className="bg-[#0F172A] p-3 rounded-lg border border-[#334155]">
+              <span className="text-[10px] text-[#94A3B8] uppercase block">PostgreSQL</span>
+              <span className="text-xs font-semibold text-[#22C55E]">
+                {health.services?.database?.healthy
+                  ? 'Connected (Source of truth)'
+                  : 'Disconnected'}
+              </span>
+            </div>
+            <div className="bg-[#0F172A] p-3 rounded-lg border border-[#334155]">
+              <span className="text-[10px] text-[#94A3B8] uppercase block">Redis</span>
+              <span className="text-xs font-semibold text-[#22C55E]">
+                {health.services?.redis?.healthy ? 'Active (Atomic Locks & TTL)' : 'Disconnected'}
+              </span>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );

@@ -3,6 +3,7 @@ import fastifyCors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { env } from './config.js';
 import { authRoutes } from './routes/auth.js';
+import { eventRoutes } from './routes/events.js';
 import { healthRoutes } from './routes/health.js';
 
 export function buildApp(): FastifyInstance {
@@ -21,6 +22,7 @@ export function buildApp(): FastifyInstance {
 
   app.register(healthRoutes);
   app.register(authRoutes);
+  app.register(eventRoutes);
 
   return app;
 }
