@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { Navbar } from '../components/navbar';
+import { AuthProvider } from '../context/auth-context';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -13,7 +15,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased min-h-screen bg-[#0F172A] text-[#F1F5F9]">{children}</body>
+      <body className="antialiased min-h-screen bg-[#0F172A] text-[#F1F5F9]">
+        <AuthProvider>
+          <Navbar />
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }

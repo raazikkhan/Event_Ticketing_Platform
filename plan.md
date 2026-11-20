@@ -73,20 +73,20 @@ Success criteria:
 Purpose: Identify attendees and organizers with minimal complexity and robust security.
 
 Checklist:
-- [ ] Implement register, login, logout, and current user (`/me`) endpoints.
-- [ ] Hash passwords securely with Argon2id or bcrypt.
-- [ ] Issue secure HTTP-only cookie sessions.
-- [ ] Enforce two roles: `attendee` and `organizer`.
-- [ ] Implement role-based route guards on Fastify API and Next.js web application.
-- [ ] Create web auth views: Sign In and Sign Up with role toggle.
+- [x] Implement register, login, logout, and current user (`/me`) endpoints.
+- [x] Hash passwords securely with Argon2id or bcrypt.
+- [x] Issue secure HTTP-only cookie sessions.
+- [x] Enforce two roles: `attendee` and `organizer`.
+- [x] Implement role-based route guards on Fastify API and Next.js web application.
+- [x] Create web auth views: Sign In and Sign Up with role toggle.
 
 Tests and verification:
-- [ ] Unit tests for successful registration, login, bad credentials, and session logout.
-- [ ] Attendees are blocked from organizer endpoints with HTTP 403 Forbidden.
-- [ ] Unauthenticated requests to protected endpoints return HTTP 401 Unauthorized.
+- [x] Unit tests for successful registration, login, bad credentials, and session logout.
+- [x] Attendees are blocked from organizer endpoints with HTTP 403 Forbidden.
+- [x] Unauthenticated requests to protected endpoints return HTTP 401 Unauthorized.
 
 Success criteria:
-- [ ] Users can register, sign in, sign out, and are restricted strictly by role.
+- [x] Users can register, sign in, sign out, and are restricted strictly by role.
 
 ---
 
