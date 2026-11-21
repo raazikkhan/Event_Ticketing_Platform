@@ -15,6 +15,9 @@ const envSchema = z.object({
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
   TICKET_SIGNING_SECRET: z.string().default('ticket-signing-secret-minimum-32-characters'),
+  SMTP_HOST: z.string().default('localhost'),
+  SMTP_PORT: z.coerce.number().default(1025),
+  SMTP_FROM: z.string().default('tickets@example.com'),
 });
 
 export type Env = z.infer<typeof envSchema>;

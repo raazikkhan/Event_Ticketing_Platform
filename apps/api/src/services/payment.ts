@@ -4,15 +4,18 @@ import Razorpay from 'razorpay';
 import { env } from '../config.js';
 import { db } from '../db/index.js';
 import {
+  events,
   bookings,
   confirmedSeats,
   refunds,
   seats,
   sections,
   tickets,
+  users,
   webhookEvents,
 } from '../db/schema.js';
 import { publishSeatUpdate } from '../redis/index.js';
+import { queueBookingEmail } from './email.js';
 import { getSeatHold, releaseSeatHold } from './seat-hold.js';
 
 interface CheckoutResult {
@@ -273,5 +276,10 @@ export async function processPaymentWebhook(
     'sold',
     holdSeats.map((seat) => seat.id),
   );
+  const [attendee] = await db.select().from(users).where(eq(users.id, booking.userId)).limit(1);
+  const [event] = await db.select().from(events).where(eq(events.id, booking.eventId)).limit(1);
+  if (attendee && event) {
+    await queueBookingEmail(attendee.email, booking.id, event.title);
+  }
   return { replayed: false, status: 'processed' };
 }

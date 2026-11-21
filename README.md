@@ -18,7 +18,7 @@ The implementation follows `plan.md`.
 | 6 | Atomic seat holds | Complete |
 | 7 | Booking and test-mode payments | Complete |
 | 8 | Real-time seat map | Complete |
-| 9 | Tickets, dashboard, refunds, notifications | Not started |
+| 9 | Tickets, dashboard, refunds, notifications | Complete |
 | 10 | Waiting room and bot protection | Not started |
 | 11 | Concurrency and load proof | Not started |
 | 12 | Deployment and documentation | In progress |

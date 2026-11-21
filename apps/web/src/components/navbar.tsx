@@ -25,11 +25,27 @@ export function Navbar() {
             (user ? (
               <div className="flex items-center gap-4">
                 {user.role === 'organizer' && (
+                  <>
+                    <Link
+                      href="/organizer"
+                      className="text-xs font-semibold px-2.5 py-1 rounded bg-[#6366F1] text-white hover:bg-[#6366F1]/90 transition"
+                    >
+                      Organizer Hub
+                    </Link>
+                    <Link
+                      href="/organizer/scan"
+                      className="text-xs text-[#94A3B8] hover:text-[#F1F5F9] transition"
+                    >
+                      Scan Ticket
+                    </Link>
+                  </>
+                )}
+                {user.role === 'attendee' && (
                   <Link
-                    href="/organizer"
-                    className="text-xs font-semibold px-2.5 py-1 rounded bg-[#6366F1] text-white hover:bg-[#6366F1]/90 transition"
+                    href="/dashboard"
+                    className="text-xs text-[#94A3B8] hover:text-[#F1F5F9] transition"
                   >
-                    Organizer Hub
+                    My Tickets
                   </Link>
                 )}
 

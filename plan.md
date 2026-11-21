@@ -209,23 +209,23 @@ Success criteria:
 Purpose: Complete the post-purchase attendee and organizer lifecycle.
 
 Checklist:
-- [ ] Ticket generation: Signed QR code token (HMAC-SHA256) per confirmed seat.
-- [ ] Attendee dashboard: View upcoming and past bookings, download QR tickets.
-- [ ] Organizer scanner endpoint: Validate QR ticket code once, transition status from `issued` to `used`.
-- [ ] Prevent ticket replay: Reject second scan with clear error message.
-- [ ] Refund flow:
+- [x] Ticket generation: Signed QR code token (HMAC-SHA256) per confirmed seat.
+- [x] Attendee dashboard: View upcoming and past bookings, download QR tickets.
+- [x] Organizer scanner endpoint: Validate QR ticket code once, transition status from `issued` to `used`.
+- [x] Prevent ticket replay: Reject second scan with clear error message.
+- [x] Refund flow:
   - Policy: Allowed up to 24 hours prior to event start date.
   - Atomically cancel booking, delete confirmed seats (returning inventory), and invalidate tickets.
-- [ ] Asynchronous email confirmation using BullMQ worker (sending to local Mailpit catcher).
+- [x] Asynchronous email confirmation using BullMQ worker (sending to local Mailpit catcher).
 
 Tests and verification:
-- [ ] Valid QR ticket scans successfully once; second scan is rejected.
-- [ ] Tampered ticket signature is rejected.
-- [ ] Refund requested >24h before event succeeds and returns seats to inventory.
-- [ ] Refund requested <24h before event is rejected.
+- [x] Valid QR ticket scans successfully once; second scan is rejected.
+- [x] Tampered ticket signature is rejected.
+- [x] Refund requested >24h before event succeeds and returns seats to inventory.
+- [x] Refund requested <24h before event is rejected.
 
 Success criteria:
-- [ ] Attendees can view tickets, scan at venue, and request eligible refunds; organizers can validate tickets reliably.
+- [x] Attendees can view tickets, scan at venue, and request eligible refunds; organizers can validate tickets reliably.
 
 ---
 

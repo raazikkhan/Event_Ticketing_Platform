@@ -2,6 +2,7 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { env } from './config.js';
+import { attendeeRoutes } from './routes/attendee.js';
 import { authRoutes } from './routes/auth.js';
 import { eventRoutes } from './routes/events.js';
 import { healthRoutes } from './routes/health.js';
@@ -46,6 +47,7 @@ export function buildApp(): FastifyInstance {
   app.register(holdRoutes);
   app.register(paymentRoutes);
   app.register(seatStreamRoutes);
+  app.register(attendeeRoutes);
 
   return app;
 }
