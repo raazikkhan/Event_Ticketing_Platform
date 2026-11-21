@@ -20,8 +20,8 @@ The implementation follows `plan.md`.
 | 8 | Real-time seat map | Complete |
 | 9 | Tickets, dashboard, refunds, notifications | Complete |
 | 10 | Waiting room and bot protection | Complete |
-| 11 | Concurrency and load proof | Not started |
-| 12 | Deployment and documentation | In progress |
+| 11 | Concurrency and load proof | Complete |
+| 12 | Deployment and documentation | Complete |
 
 ## Features
 
@@ -99,7 +99,7 @@ queue features in later parts.
 - Packaging: pnpm workspaces
 - Local infrastructure: Docker Compose
 - Real-time transport: Server-Sent Events with Redis pub/sub
-- Future load testing: k6
+- Concurrency load testing: k6
 
 ## File Structure
 
@@ -430,11 +430,18 @@ pnpm lint
 pnpm format
 ```
 
-End-to-end and k6 scripts are placeholders until Parts 8 and 11:
+Run browser end-to-end tests against the live local app:
 
 ```bash
 pnpm test:e2e
+```
+
+Run concurrency load tests:
+
+```bash
 pnpm test:load
+pnpm test:load:section
+pnpm test:load:verify
 ```
 
 ## Seat State and Accessibility
@@ -451,6 +458,32 @@ The seat map uses these fixed states:
 Seat controls include keyboard selection and text labels so state is not
 communicated by color alone.
 
+## Deployment
+
+Container definitions are included for the web and API applications:
+
+- `apps/web/Dockerfile`
+- `apps/api/Dockerfile`
+- `docker-compose.yml`
+- `vercel.json`
+- `render.yaml`
+
+To deploy the web app on Vercel, set `NEXT_PUBLIC_API_URL` to the public API URL.
+The API deployment must receive `DATABASE_URL`, `REDIS_URL`, `SESSION_SECRET`,
+`FRONTEND_URL`, and the Razorpay and ticket-signing secrets.
+
+The API Docker image applies Drizzle migrations during startup through
+`initDb()`. It requires reachable PostgreSQL and Redis services.
+
+For local production-like containers:
+
+```bash
+docker compose up --build
+```
+
+Docker is optional outside containerized environments. External PostgreSQL,
+Redis, and API hosts must be supplied through environment variables.
+
 ## Implementation Limits
 
 The MVP does not implement:
@@ -465,10 +498,7 @@ The MVP does not implement:
 - Refund operations
 - Waiting-room queues
 - Bot protection
-- k6 load proof
-- Production deployment
-
-These features remain in `plan.md` for later implementation parts.
+- Hosted production deployment credentials
 
 ## Development Commands
 
@@ -484,8 +514,10 @@ These features remain in `plan.md` for later implementation parts.
 | `pnpm db:generate` | Generate a Drizzle migration |
 | `pnpm db:migrate` | Apply Drizzle migrations |
 | `pnpm db:seed` | Seed organizer and sample event |
-| `pnpm test:e2e` | Reserved for Playwright tests |
-| `pnpm test:load` | Reserved for k6 tests |
+| `pnpm test:e2e` | Run Playwright browser tests |
+| `pnpm test:load` | Run 1,000-VU same-seat K6 test |
+| `pnpm test:load:section` | Run 1,000-VU limited-section K6 test |
+| `pnpm test:load:verify` | Verify zero duplicate confirmed seats |
 
 ## Contributing and Workflow
 

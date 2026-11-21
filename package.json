@@ -16,7 +16,9 @@
     "db:seed": "pnpm --filter @event-platform/api db:seed",
     "test": "pnpm --filter @event-platform/api test",
     "test:e2e": "pnpm --filter @event-platform/web test:e2e",
-    "test:load": "echo 'Part 11 will configure k6 load testing'"
+    "test:load": "k6 run scripts/load/same-seat.js",
+    "test:load:section": "k6 run scripts/load/limited-section.js",
+    "test:load:verify": "scripts/verify-double-booking.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

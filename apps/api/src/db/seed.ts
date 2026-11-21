@@ -7,6 +7,17 @@ import { events, users } from './schema.js';
 async function seed(): Promise<void> {
   await initDb();
 
+  const attendeeEmail = 'attendee@example.com';
+  const attendeeRows = await db.select().from(users).where(eq(users.email, attendeeEmail)).limit(1);
+  if (attendeeRows.length === 0) {
+    await db.insert(users).values({
+      name: 'Sample Attendee',
+      email: attendeeEmail,
+      passwordHash: await bcrypt.hash('AttendeePassword123', 10),
+      role: 'attendee',
+    });
+  }
+
   const email = 'organizer@example.com';
   let organizerRows = await db.select().from(users).where(eq(users.email, email)).limit(1);
 

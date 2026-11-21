@@ -7,7 +7,7 @@
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start --port 3000",
-    "test:e2e": "echo 'Playwright tests configured in Part 12'"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "lucide-react": "^1.77.0",
@@ -16,6 +16,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4.0.8",
     "@types/node": "^22.13.5",
     "@types/react": "^19.0.10",
