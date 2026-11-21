@@ -233,19 +233,19 @@ Success criteria:
 Purpose: Protect high-demand events against traffic surges and script abuse.
 
 Checklist:
-- [ ] Waiting room queue in Redis for events flagged with `is_high_demand = true`.
-- [ ] Users assigned queue positions and admitted in controlled batches.
-- [ ] Issue short-lived, signed admission tokens required for seat holds on high-demand events.
-- [ ] Rate limiting (sliding window via Redis) on hold and checkout endpoints per IP and per user.
-- [ ] Web application queue screen displaying real-time position and estimated wait time.
+- [x] Waiting room queue in Redis for events flagged with `is_high_demand = true`.
+- [x] Users assigned queue positions and admitted in controlled batches.
+- [x] Issue short-lived, signed admission tokens required for seat holds on high-demand events.
+- [x] Rate limiting (sliding window via Redis) on hold and checkout endpoints per IP and per user.
+- [x] Web application queue screen displaying real-time position and estimated wait time.
 
 Tests and verification:
-- [ ] Users without valid admission tokens cannot hold seats on queued events.
-- [ ] Rate limits trigger HTTP 429 Too Many Requests under rapid automated requests.
-- [ ] Batch admission preserves FIFO arrival order.
+- [x] Users without valid admission tokens cannot hold seats on queued events.
+- [x] Rate limits trigger HTTP 429 Too Many Requests under rapid automated requests.
+- [x] Batch admission preserves FIFO arrival order.
 
 Success criteria:
-- [ ] High-demand events regulate incoming traffic in orderly batches and resist bot abuse.
+- [x] High-demand events regulate incoming traffic in orderly batches and resist bot abuse.
 
 ---
 

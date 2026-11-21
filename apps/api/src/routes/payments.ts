@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { env } from '../config.js';
 import { authenticate } from '../middleware/auth.js';
 import {
   type WebhookPayload,
@@ -7,6 +8,7 @@ import {
   processPaymentWebhook,
   verifyWebhookSignature,
 } from '../services/payment.js';
+import { checkSlidingWindowRateLimit } from '../services/rate-limit.js';
 
 const checkoutSchema = z.object({
   eventId: z.string().uuid(),
@@ -44,6 +46,22 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
         error: 'Validation failed',
         details: parsed.error.flatten(),
       });
+    }
+
+    const ip =
+      request.headers['x-forwarded-for']?.toString().split(',')[0].trim() ??
+      request.ip ??
+      'unknown';
+    const [ipLimit, userLimit] = await Promise.all([
+      checkSlidingWindowRateLimit(`checkout:ip:${ip}`, env.CHECKOUT_RATE_LIMIT_PER_WINDOW),
+      checkSlidingWindowRateLimit(`checkout:user:${user.id}`, env.CHECKOUT_RATE_LIMIT_PER_WINDOW),
+    ]);
+    if (!ipLimit.allowed || !userLimit.allowed) {
+      reply.header(
+        'Retry-After',
+        String(Math.max(ipLimit.retryAfterSeconds, userLimit.retryAfterSeconds)),
+      );
+      return reply.status(429).send({ error: 'Too many checkout requests' });
     }
 
     try {

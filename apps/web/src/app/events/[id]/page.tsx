@@ -59,6 +59,12 @@ export default function EventDetailPage() {
   const [activeHoldId, setActiveHoldId] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [liveConnected, setLiveConnected] = useState(false);
+  const [admissionToken, setAdmissionToken] = useState<string | null>(null);
+  const [queueStatus, setQueueStatus] = useState<{
+    admitted: boolean;
+    position: number | null;
+    estimatedWaitSeconds: number;
+  } | null>(null);
 
   const fetchEventData = useCallback(async () => {
     try {
@@ -111,6 +117,33 @@ export default function EventDetailPage() {
     return () => stream.close();
   }, [eventId]);
 
+  useEffect(() => {
+    if (!data?.event.isHighDemand) return;
+
+    let active = true;
+    const pollQueue = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/events/${eventId}/queue`, {
+          credentials: 'include',
+        });
+        if (!response.ok) return;
+        const status = await response.json();
+        if (!active) return;
+        setQueueStatus(status);
+        if (status.admissionToken) setAdmissionToken(status.admissionToken);
+      } catch {
+        // The browser retries queue status at the next interval.
+      }
+    };
+
+    void pollQueue();
+    const interval = setInterval(pollQueue, 3000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [data?.event.isHighDemand, eventId]);
+
   const toggleSeatSelection = (seat: Seat) => {
     if (seat.status !== 'available') return;
 
@@ -130,7 +163,10 @@ export default function EventDetailPage() {
     try {
       const res = await fetch(`${API_BASE}/api/events/${eventId}/holds`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(admissionToken ? { 'x-admission-token': admissionToken } : {}),
+        },
         credentials: 'include',
         body: JSON.stringify({ seatIds: selectedSeatIds }),
       });
@@ -254,6 +290,25 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      {data.event.isHighDemand && queueStatus && !queueStatus.admitted && (
+        <section
+          className="mb-6 bg-[#1E293B] border border-[#F59E0B]/40 rounded-xl p-5"
+          aria-live="polite"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-[#F1F5F9]">Waiting Room</h2>
+              <p className="text-xs text-[#94A3B8] mt-1">
+                Position {queueStatus.position ?? '-'} in the queue
+              </p>
+            </div>
+            <p className="text-xs text-[#F59E0B]">
+              Estimated wait: {queueStatus.estimatedWaitSeconds} seconds
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* Main Seat Map Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -521,14 +576,20 @@ export default function EventDetailPage() {
             <button
               type="button"
               onClick={reserveSeats}
-              disabled={selectedSeats.length === 0 || holding}
+              disabled={
+                selectedSeats.length === 0 ||
+                holding ||
+                (data.event.isHighDemand && queueStatus?.admitted !== true)
+              }
               className="w-full py-2.5 px-4 bg-[#6366F1] hover:bg-[#6366F1]/90 text-white font-medium text-xs rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
-              {holding
-                ? 'Reserving Seats...'
-                : selectedSeats.length === 0
-                  ? 'Select Seats Above'
-                  : `Reserve ${selectedSeats.length} ${selectedSeats.length === 1 ? 'Seat' : 'Seats'} for 5 Minutes`}
+              {data.event.isHighDemand && queueStatus?.admitted !== true
+                ? 'Waiting for Admission'
+                : holding
+                  ? 'Reserving Seats...'
+                  : selectedSeats.length === 0
+                    ? 'Select Seats Above'
+                    : `Reserve ${selectedSeats.length} ${selectedSeats.length === 1 ? 'Seat' : 'Seats'} for 5 Minutes`}
             </button>
 
             {activeHoldId && (

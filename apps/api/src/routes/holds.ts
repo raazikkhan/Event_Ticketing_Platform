@@ -1,8 +1,11 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { env } from '../config.js';
 import { authenticate } from '../middleware/auth.js';
 import { getEventDetailsWithSeats } from '../services/event.js';
+import { checkSlidingWindowRateLimit } from '../services/rate-limit.js';
 import { createSeatHold, getSeatHold, releaseSeatHold } from '../services/seat-hold.js';
+import { isHighDemandEvent, verifyAdmissionToken } from '../services/waiting-room.js';
 
 const holdSchema = z.object({
   seatIds: z.array(z.string().uuid()).min(1).max(8),
@@ -37,6 +40,32 @@ export const holdRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const { id: eventId } = request.params as { id: string };
+    const ip =
+      request.headers['x-forwarded-for']?.toString().split(',')[0].trim() ??
+      request.ip ??
+      'unknown';
+    const [ipLimit, userLimit] = await Promise.all([
+      checkSlidingWindowRateLimit(`hold:ip:${ip}`, env.HOLD_RATE_LIMIT_PER_WINDOW),
+      checkSlidingWindowRateLimit(`hold:user:${user.id}`, env.HOLD_RATE_LIMIT_PER_WINDOW),
+    ]);
+    if (!ipLimit.allowed || !userLimit.allowed) {
+      reply.header(
+        'Retry-After',
+        String(Math.max(ipLimit.retryAfterSeconds, userLimit.retryAfterSeconds)),
+      );
+      return reply.status(429).send({ error: 'Too many hold requests' });
+    }
+
+    if (await isHighDemandEvent(eventId)) {
+      const admissionToken =
+        typeof request.headers['x-admission-token'] === 'string'
+          ? request.headers['x-admission-token']
+          : null;
+      if (!admissionToken || !verifyAdmissionToken(eventId, user.id, admissionToken)) {
+        return reply.status(403).send({ error: 'Valid waiting-room admission required' });
+      }
+    }
+
     const result = await createSeatHold(eventId, user.id, parsed.data.seatIds);
 
     if (!result.hold) {
