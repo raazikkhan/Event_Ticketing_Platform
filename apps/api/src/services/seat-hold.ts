@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { confirmedSeats, seats } from '../db/schema.js';
-import { redis } from '../redis/index.js';
+import { publishSeatUpdate, redis } from '../redis/index.js';
 
 export const HOLD_TTL_MS = 5 * 60 * 1000;
 export const MAX_SEATS_PER_HOLD = 8;
@@ -140,6 +140,8 @@ export async function createSeatHold(
     return { hold: null, reason: 'held' };
   }
 
+  await publishSeatUpdate(eventId, 'held', uniqueSeatIds);
+
   const expiresAt = new Date(Date.now() + HOLD_TTL_MS).toISOString();
   return {
     hold: {
@@ -181,7 +183,14 @@ export async function releaseSeatHold(
     ownedSeatKeys.length,
   );
 
-  return released === 1;
+  if (released !== 1) return false;
+
+  await publishSeatUpdate(
+    eventId,
+    'released',
+    ownedSeatKeys.map((key) => key.slice(`seat-hold:${eventId}:`.length)),
+  );
+  return true;
 }
 
 export async function getHeldSeatIds(eventId: string): Promise<string[]> {

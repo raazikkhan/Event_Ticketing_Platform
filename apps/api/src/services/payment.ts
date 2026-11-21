@@ -12,6 +12,7 @@ import {
   tickets,
   webhookEvents,
 } from '../db/schema.js';
+import { publishSeatUpdate } from '../redis/index.js';
 import { getSeatHold, releaseSeatHold } from './seat-hold.js';
 
 interface CheckoutResult {
@@ -267,5 +268,10 @@ export async function processPaymentWebhook(
   });
 
   await releaseSeatHold(booking.eventId, booking.userId, booking.holdId);
+  await publishSeatUpdate(
+    booking.eventId,
+    'sold',
+    holdSeats.map((seat) => seat.id),
+  );
   return { replayed: false, status: 'processed' };
 }

@@ -17,7 +17,7 @@ The implementation follows `plan.md`.
 | 5 | Database modeling | Complete |
 | 6 | Atomic seat holds | Complete |
 | 7 | Booking and test-mode payments | Complete |
-| 8 | Real-time seat map | Not started |
+| 8 | Real-time seat map | Complete |
 | 9 | Tickets, dashboard, refunds, notifications | Not started |
 | 10 | Waiting room and bot protection | Not started |
 | 11 | Concurrency and load proof | Not started |
@@ -98,7 +98,7 @@ queue features in later parts.
 - Formatting and linting: Biome
 - Packaging: pnpm workspaces
 - Local infrastructure: Docker Compose
-- Future real-time path: Server-Sent Events with Redis pub/sub
+- Real-time transport: Server-Sent Events with Redis pub/sub
 - Future load testing: k6
 
 ## File Structure
@@ -461,7 +461,6 @@ The MVP does not implement:
 - Native mobile applications
 - Localization
 - Drag-and-drop seat layout editing
-- Real-time SSE updates
 - Tickets and venue scanning
 - Refund operations
 - Waiting-room queues

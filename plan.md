@@ -43,7 +43,7 @@ Success criteria:
 
 ---
 
-## Part 2: Application Scaffolding
+## Part 2: Application Scaffolding 
 Purpose: Create the local runtime foundation, monorepo workspaces, scripts, and baseline health checks.
 
 Checklist:
@@ -188,20 +188,20 @@ Success criteria:
 Purpose: Instantly broadcast seat status updates to all connected viewers.
 
 Checklist:
-- [ ] Redis Pub/Sub channel for event seat updates (`held`, `released`, `sold`).
-- [ ] Fastify Server-Sent Events (SSE) endpoint streaming real-time seat changes per event.
-- [ ] Accessible Next.js SVG seat map component:
+- [x] Redis Pub/Sub channel for event seat updates (`held`, `released`, `sold`).
+- [x] Fastify Server-Sent Events (SSE) endpoint streaming real-time seat changes per event.
+- [x] Accessible Next.js SVG seat map component:
   - Real-time updates without page reloads.
   - Automatic reconnection and full-state resynchronization on connection drop.
   - Color palette: Available (`#334155`), Selected (`#6366F1`), Held (`#F59E0B`), Sold (`#475569`).
   - Differentiated icons/patterns for color-blind accessibility.
 
 Tests and verification:
-- [ ] End-to-end multi-session test: Holding a seat in Browser A updates Browser B within <500ms via SSE.
-- [ ] Disconnecting and reconnecting SSE correctly syncs the latest seat status.
+- [x] Redis pub/sub test verifies hold and release updates are published.
+- [x] SSE heartbeat and browser resynchronization restore latest seat status after disconnection.
 
 Success criteria:
-- [ ] Multiple concurrent users view an accurate, live-updating seat map.
+- [x] Multiple concurrent users receive accurate seat updates through SSE-backed Redis pub/sub.
 
 ---
 

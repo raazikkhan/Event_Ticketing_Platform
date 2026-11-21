@@ -58,6 +58,7 @@ export default function EventDetailPage() {
   const [holdError, setHoldError] = useState<string | null>(null);
   const [activeHoldId, setActiveHoldId] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [liveConnected, setLiveConnected] = useState(false);
 
   const fetchEventData = useCallback(async () => {
     try {
@@ -79,6 +80,36 @@ export default function EventDetailPage() {
   useEffect(() => {
     fetchEventData();
   }, [fetchEventData]);
+
+  useEffect(() => {
+    if (!eventId) return;
+
+    const stream = new EventSource(`${API_BASE}/api/events/${eventId}/seats/stream`, {
+      withCredentials: true,
+    });
+
+    const resync = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/events/${eventId}`, {
+          credentials: 'include',
+        });
+        if (res.ok) setData(await res.json());
+      } catch {
+        // The browser will retry the EventSource connection automatically.
+      }
+    };
+
+    stream.onopen = () => {
+      setLiveConnected(true);
+      void resync();
+    };
+    stream.onerror = () => setLiveConnected(false);
+    stream.addEventListener('sync', () => void resync());
+    stream.addEventListener('seat-update', () => void resync());
+    stream.addEventListener('heartbeat', () => void resync());
+
+    return () => stream.close();
+  }, [eventId]);
 
   const toggleSeatSelection = (seat: Seat) => {
     if (seat.status !== 'available') return;
@@ -200,7 +231,16 @@ export default function EventDetailPage() {
             </p>
           </div>
           <div className="text-right">
-            <span className="text-xs text-[#94A3B8] block">Event Date</span>
+            <span className="text-xs text-[#94A3B8] block">
+              <span
+                className={`inline-block w-2 h-2 rounded-full mr-1 ${
+                  liveConnected ? 'bg-[#22C55E]' : 'bg-[#94A3B8]'
+                }`}
+                aria-hidden="true"
+              />
+              {liveConnected ? 'Live seat updates' : 'Reconnecting'}
+            </span>
+            <span className="text-xs text-[#94A3B8] block mt-1">Event Date</span>
             <span className="text-sm font-semibold text-[#F1F5F9]">
               {new Date(event.eventDate).toLocaleDateString('en-US', {
                 weekday: 'short',

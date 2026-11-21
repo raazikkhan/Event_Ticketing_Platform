@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
 import { dbPool, initDb } from '../src/db/index.js';
-import { redis } from '../src/redis/index.js';
+import { redis, redisPubSub, seatUpdateChannel } from '../src/redis/index.js';
 import { createSeatHold, getHeldSeatIds, releaseSeatHold } from '../src/services/seat-hold.js';
 
 describe('Seat Holds', () => {
@@ -139,5 +139,33 @@ describe('Seat Holds', () => {
     if (held.hold) {
       expect(await releaseSeatHold(eventId, ownerId, held.hold.id)).toBe(true);
     }
+  });
+
+  it('publishes held and released seat updates through Redis pub/sub', async () => {
+    const subscriber = redisPubSub.duplicate();
+    await subscriber.connect();
+    await subscriber.subscribe(seatUpdateChannel(eventId));
+
+    const messages: Array<{ status: string; seatIds: string[] }> = [];
+    subscriber.on('message', (_channel, message) => {
+      messages.push(JSON.parse(message));
+    });
+
+    const ownerId = randomUUID();
+    const hold = await createSeatHold(eventId, ownerId, [seatIds[1]]);
+    expect(hold.hold).not.toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    if (hold.hold) {
+      expect(await releaseSeatHold(eventId, ownerId, hold.hold.id)).toBe(true);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    expect(messages.map((message) => message.status)).toEqual(
+      expect.arrayContaining(['held', 'released']),
+    );
+    expect(messages.find((message) => message.status === 'held')?.seatIds).toContain(seatIds[1]);
+    await subscriber.unsubscribe(seatUpdateChannel(eventId));
+    await subscriber.quit();
   });
 });

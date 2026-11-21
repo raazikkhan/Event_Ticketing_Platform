@@ -7,6 +7,7 @@ import { eventRoutes } from './routes/events.js';
 import { healthRoutes } from './routes/health.js';
 import { holdRoutes } from './routes/holds.js';
 import { paymentRoutes } from './routes/payments.js';
+import { seatStreamRoutes } from './routes/seats.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -44,6 +45,7 @@ export function buildApp(): FastifyInstance {
   app.register(eventRoutes);
   app.register(holdRoutes);
   app.register(paymentRoutes);
+  app.register(seatStreamRoutes);
 
   return app;
 }

@@ -10,6 +10,26 @@ export const redis = new Redis(env.REDIS_URL, {
   lazyConnect: true,
 });
 
+export const redisPubSub = new Redis(env.REDIS_URL, {
+  maxRetriesPerRequest: 3,
+  lazyConnect: true,
+});
+
+export function seatUpdateChannel(eventId: string): string {
+  return `seat-updates:${eventId}`;
+}
+
+export async function publishSeatUpdate(
+  eventId: string,
+  status: 'held' | 'released' | 'sold',
+  seatIds: string[],
+): Promise<void> {
+  await redis.publish(
+    seatUpdateChannel(eventId),
+    JSON.stringify({ eventId, status, seatIds, timestamp: new Date().toISOString() }),
+  );
+}
+
 export async function checkRedisHealth(): Promise<{
   healthy: boolean;
   latencyMs?: number;
