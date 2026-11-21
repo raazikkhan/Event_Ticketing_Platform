@@ -11,6 +11,10 @@ const envSchema = z.object({
   REDIS_URL: z.string().default('redis://localhost:6379'),
   SESSION_SECRET: z.string().default('super-secret-session-key-minimum-32-characters-required'),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+  TICKET_SIGNING_SECRET: z.string().default('ticket-signing-secret-minimum-32-characters'),
 });
 
 export type Env = z.infer<typeof envSchema>;

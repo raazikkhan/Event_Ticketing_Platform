@@ -11,6 +11,9 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
+    "db:generate": "pnpm --filter @event-platform/api db:generate",
+    "db:migrate": "pnpm --filter @event-platform/api db:migrate",
+    "db:seed": "pnpm --filter @event-platform/api db:seed",
     "test": "pnpm --filter @event-platform/api test",
     "test:e2e": "pnpm --filter @event-platform/web test:e2e",
     "test:load": "echo 'Part 11 will configure k6 load testing'"

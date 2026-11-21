@@ -54,6 +54,10 @@ export default function EventDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
   const [hoveredSeat, setHoveredSeat] = useState<Seat | null>(null);
+  const [holding, setHolding] = useState(false);
+  const [holdError, setHoldError] = useState<string | null>(null);
+  const [activeHoldId, setActiveHoldId] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const fetchEventData = useCallback(async () => {
     try {
@@ -85,6 +89,56 @@ export default function EventDetailPage() {
       }
       return [...prev, seat.id];
     });
+  };
+
+  const reserveSeats = async () => {
+    if (selectedSeatIds.length === 0) return;
+    setHolding(true);
+    setHoldError(null);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/events/${eventId}/holds`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ seatIds: selectedSeatIds }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        throw new Error(body.error || 'Unable to reserve seats');
+      }
+      setActiveHoldId(body.hold.id);
+      setSelectedSeatIds([]);
+      await fetchEventData();
+    } catch (err) {
+      setHoldError(err instanceof Error ? err.message : 'Unable to reserve seats');
+    } finally {
+      setHolding(false);
+    }
+  };
+
+  const initializeCheckout = async () => {
+    if (!activeHoldId) return;
+    setCheckoutError(null);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/bookings/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ eventId, holdId: activeHoldId }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        throw new Error(body.error || 'Unable to initialize checkout');
+      }
+
+      setCheckoutError(
+        `Test checkout ready: ${body.checkout.razorpayOrderId} (${formatCurrency(body.checkout.amount)})`,
+      );
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : 'Unable to initialize checkout');
+    }
   };
 
   if (loading) {
@@ -426,18 +480,40 @@ export default function EventDetailPage() {
 
             <button
               type="button"
-              disabled={selectedSeats.length === 0}
+              onClick={reserveSeats}
+              disabled={selectedSeats.length === 0 || holding}
               className="w-full py-2.5 px-4 bg-[#6366F1] hover:bg-[#6366F1]/90 text-white font-medium text-xs rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
-              {selectedSeats.length === 0
-                ? 'Select Seats Above'
-                : `Reserve ${selectedSeats.length} ${selectedSeats.length === 1 ? 'Seat' : 'Seats'} (Part 6)`}
+              {holding
+                ? 'Reserving Seats...'
+                : selectedSeats.length === 0
+                  ? 'Select Seats Above'
+                  : `Reserve ${selectedSeats.length} ${selectedSeats.length === 1 ? 'Seat' : 'Seats'} for 5 Minutes`}
             </button>
 
+            {activeHoldId && (
+              <button
+                type="button"
+                onClick={initializeCheckout}
+                className="w-full mt-3 py-2.5 px-4 border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1]/10 font-medium text-xs rounded-lg transition"
+              >
+                Initialize Test Checkout
+              </button>
+            )}
+
             <p className="text-[11px] text-[#94A3B8] text-center mt-3 leading-relaxed">
-              In Part 6, clicking reserve will initiate a 5-minute atomic Redis hold to lock these
-              seats while checking out.
+              Clicking reserve initiates a 5-minute atomic Redis hold while you check out.
             </p>
+            {holdError && (
+              <p className="text-xs text-[#EF4444] text-center mt-3" role="alert">
+                {holdError}
+              </p>
+            )}
+            {checkoutError && (
+              <output className="block text-xs text-[#22C55E] text-center mt-3">
+                {checkoutError}
+              </output>
+            )}
           </div>
         </div>
       </div>

@@ -118,21 +118,21 @@ Purpose: Enforce ACID guarantees, Drizzle ORM schema, and the double-selling inv
 Note: Requires explicit user sign-off.
 
 Checklist:
-- [ ] Verify database schema in `docs/schema.json` and rationale in `docs/schema-rationale.md`.
-- [ ] Implement Drizzle ORM schema definitions in `apps/api`:
+- [x] Verify database schema in `docs/schema.json` and rationale in `docs/schema-rationale.md`.
+- [x] Implement Drizzle ORM schema definitions in `apps/api`:
   - `users`, `sessions`, `events`, `sections`, `seats`, `bookings`, `confirmed_seats`, `tickets`, `refunds`, `webhook_events`.
-- [ ] Enforce database-level unique constraint on `confirmed_seats (event_id, seat_id)`.
-- [ ] Configure integer storage for all monetary fields in smallest currency units.
-- [ ] Generate and apply Drizzle migrations against PostgreSQL.
-- [ ] Seed database with initial organizer and sample multi-tier event.
-- [ ] Present migration and schema verification for user sign-off.
+- [x] Enforce database-level unique constraint on `confirmed_seats (event_id, seat_id)`.
+- [x] Configure integer storage for all monetary fields in smallest currency units.
+- [x] Generate and apply Drizzle migrations against PostgreSQL.
+- [x] Seed database with initial organizer and sample multi-tier event.
+- [x] Present migration and schema verification for user sign-off.
 
 Tests and verification:
-- [ ] Migrations apply cleanly on a blank database.
-- [ ] Integration test: Attempting to insert duplicate confirmed seats for the same event throws a unique constraint violation.
+- [x] Migrations apply cleanly on a blank database.
+- [x] Integration test: Attempting to insert duplicate confirmed seats for the same event throws a unique constraint violation.
 
 Success criteria:
-- [ ] The user explicitly approves the schema implementation, and the database engine enforces zero double-selling.
+- [x] The user explicitly approves the schema implementation, and the database engine enforces zero double-selling.
 
 ---
 
@@ -140,21 +140,21 @@ Success criteria:
 Purpose: Temporarily reserve seats while an attendee checks out, preventing contention.
 
 Checklist:
-- [ ] Redis atomic hold script (Lua) to hold one or more seats with a 5-minute TTL.
-- [ ] Atomic hold guarantees all-or-nothing reservation (if any seat is taken, none are held).
-- [ ] Release endpoint and automatic release when the 5-minute TTL expires.
-- [ ] Associate holds with user/session token so only the hold owner can check out.
-- [ ] Enforce hold limits (maximum seats per hold, maximum concurrent holds per user).
-- [ ] Seat availability endpoint merging confirmed seats (PostgreSQL) and active holds (Redis).
+- [x] Redis atomic hold script (Lua) to hold one or more seats with a 5-minute TTL.
+- [x] Atomic hold guarantees all-or-nothing reservation (if any seat is taken, none are held).
+- [x] Release endpoint and automatic release when the 5-minute TTL expires.
+- [x] Associate holds with user/session token so only the hold owner can check out.
+- [x] Enforce hold limits (maximum seats per hold, maximum concurrent holds per user).
+- [x] Seat availability endpoint merging confirmed seats (PostgreSQL) and active holds (Redis).
 
 Tests and verification:
-- [ ] Two concurrent users attempting to hold the same seat: exactly one succeeds.
-- [ ] Multi-seat hold rolls back completely if any seat is already held or sold.
-- [ ] Held seats automatically return to available state once the 5-minute TTL elapses.
-- [ ] Non-owner cannot check out a held seat.
+- [x] Two concurrent users attempting to hold the same seat: exactly one succeeds.
+- [x] Multi-seat hold rolls back completely if any seat is already held or sold.
+- [x] Held seats automatically return to available state once the 5-minute TTL elapses.
+- [x] Non-owner cannot check out a held seat.
 
 Success criteria:
-- [ ] Seat holds are atomic, exclusive, owner-bound, and self-expiring.
+- [x] Seat holds are atomic, exclusive, owner-bound, and self-expiring.
 
 ---
 
@@ -162,25 +162,25 @@ Success criteria:
 Purpose: Convert temporary holds into confirmed bookings via verified payment.
 
 Checklist:
-- [ ] Checkout endpoint to initialize a Razorpay test mode order for held seats.
-- [ ] Webhook endpoint to verify Razorpay HMAC signature.
-- [ ] Idempotent webhook processing: log event IDs in `webhook_events` to ignore duplicate deliveries.
-- [ ] Atomic PostgreSQL confirmation transaction:
+- [x] Checkout endpoint to initialize a Razorpay test mode order for held seats.
+- [x] Webhook endpoint to verify Razorpay HMAC signature.
+- [x] Idempotent webhook processing: log event IDs in `webhook_events` to ignore duplicate deliveries.
+- [x] Atomic PostgreSQL confirmation transaction:
   1. Insert into `confirmed_seats`.
   2. Update `bookings` status to `confirmed`.
   3. Release Redis hold.
   4. Generate ticket records.
-- [ ] Handle failure cases: payment failure, timeout, or cancellation releases Redis holds immediately.
-- [ ] Handle edge case: payment callback arriving after hold expiry (verify seat availability or trigger automatic refund).
+- [x] Handle failure cases: payment failure, timeout, or cancellation releases Redis holds immediately.
+- [x] Handle edge case: payment callback arriving after hold expiry (verify seat availability or trigger automatic refund).
 
 Tests and verification:
-- [ ] Valid payment webhook confirms booking, inserts confirmed seats, and releases hold.
-- [ ] Replaying the identical webhook produces zero side effects and returns HTTP 200.
-- [ ] Invalid webhook signature is rejected with HTTP 400.
-- [ ] Failed payment marks booking failed and releases seats.
+- [x] Valid payment webhook confirms booking, inserts confirmed seats, and releases hold.
+- [x] Replaying the identical webhook produces zero side effects and returns HTTP 200.
+- [x] Invalid webhook signature is rejected with HTTP 400.
+- [x] Failed payment marks booking cancelled and releases seats.
 
 Success criteria:
-- [ ] Attendee can check out in test mode and achieve a confirmed booking with zero duplicate or lost bookings.
+- [x] Attendee can check out in test mode and achieve a confirmed booking with zero duplicate or lost bookings.
 
 ---
 

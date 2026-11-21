@@ -1,4 +1,4 @@
-import { asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
   events,
@@ -8,9 +8,11 @@ import {
   type NewSection,
   type Seat,
   type Section,
+  confirmedSeats,
   seats,
   sections,
 } from '../db/schema.js';
+import { getHeldSeatIds } from './seat-hold.js';
 
 export interface SectionInput {
   name: string;
@@ -189,11 +191,29 @@ export async function getEventDetailsWithSeats(eventId: string): Promise<{
     .where(eq(seats.eventId, eventId))
     .orderBy(asc(seats.rowLabel), asc(seats.seatNumber));
 
+  const soldRows =
+    eventSeats.length === 0
+      ? []
+      : await db
+          .select({ seatId: confirmedSeats.seatId })
+          .from(confirmedSeats)
+          .where(
+            and(
+              eq(confirmedSeats.eventId, eventId),
+              inArray(
+                confirmedSeats.seatId,
+                eventSeats.map((seat) => seat.id),
+              ),
+            ),
+          );
+  const soldSeatIds = new Set(soldRows.map((row) => row.seatId));
+  const heldSeatIds = new Set(await getHeldSeatIds(eventId));
+
   const seatsWithStatus: SeatWithStatus[] = eventSeats.map((seat) => {
     const sec = sectionMap.get(seat.sectionId);
     return {
       ...seat,
-      status: 'available', // Part 6 & 7 merge holds and confirmed bookings
+      status: soldSeatIds.has(seat.id) ? 'sold' : heldSeatIds.has(seat.id) ? 'held' : 'available',
       price: sec?.price ?? 0,
       sectionName: sec?.name ?? '',
     };

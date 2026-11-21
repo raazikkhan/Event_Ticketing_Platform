@@ -1,6 +1,8 @@
 import {
   boolean,
+  index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -83,6 +85,127 @@ export const seats = pgTable(
       table.seatNumber,
     ),
   ],
+);
+
+export const bookings = pgTable(
+  'bookings',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'restrict' }),
+    totalAmount: integer('total_amount').notNull(),
+    status: varchar('status', { length: 50 })
+      .notNull()
+      .default('pending')
+      .$type<'pending' | 'confirmed' | 'cancelled' | 'refunded'>(),
+    razorpayOrderId: varchar('razorpay_order_id', { length: 100 }).unique(),
+    razorpayPaymentId: varchar('razorpay_payment_id', { length: 100 }),
+    holdId: varchar('hold_id', { length: 100 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_bookings_user_id').on(table.userId),
+    index('idx_bookings_event_id').on(table.eventId),
+  ],
+);
+
+export const confirmedSeats = pgTable(
+  'confirmed_seats',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'restrict' }),
+    seatId: uuid('seat_id')
+      .notNull()
+      .references(() => seats.id, { onDelete: 'restrict' }),
+    bookingId: uuid('booking_id')
+      .notNull()
+      .references(() => bookings.id, { onDelete: 'restrict' }),
+    price: integer('price').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    unique('uq_confirmed_seats_event_seat').on(table.eventId, table.seatId),
+    index('idx_confirmed_seats_booking_id').on(table.bookingId),
+    index('idx_confirmed_seats_event_id').on(table.eventId),
+  ],
+);
+
+export const tickets = pgTable(
+  'tickets',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    bookingId: uuid('booking_id')
+      .notNull()
+      .references(() => bookings.id, { onDelete: 'cascade' }),
+    seatId: uuid('seat_id')
+      .notNull()
+      .references(() => seats.id, { onDelete: 'restrict' }),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'restrict' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    ticketCode: varchar('ticket_code', { length: 255 }).notNull().unique(),
+    status: varchar('status', { length: 50 })
+      .notNull()
+      .default('issued')
+      .$type<'issued' | 'used' | 'refunded'>(),
+    scannedAt: timestamp('scanned_at', { withTimezone: true }),
+    scannedBy: uuid('scanned_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_tickets_booking_id').on(table.bookingId),
+    index('idx_tickets_user_id').on(table.userId),
+    index('idx_tickets_event_id').on(table.eventId),
+  ],
+);
+
+export const refunds = pgTable(
+  'refunds',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    bookingId: uuid('booking_id')
+      .notNull()
+      .references(() => bookings.id, { onDelete: 'restrict' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    amount: integer('amount').notNull(),
+    reason: text('reason'),
+    status: varchar('status', { length: 50 })
+      .notNull()
+      .default('completed')
+      .$type<'pending' | 'completed' | 'failed'>(),
+    razorpayRefundId: varchar('razorpay_refund_id', { length: 100 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_refunds_booking_id').on(table.bookingId),
+    index('idx_refunds_user_id').on(table.userId),
+  ],
+);
+
+export const webhookEvents = pgTable(
+  'webhook_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    eventId: varchar('event_id', { length: 255 }).notNull().unique(),
+    eventType: varchar('event_type', { length: 100 }).notNull(),
+    payload: jsonb('payload').notNull(),
+    status: varchar('status', { length: 50 }).notNull().$type<'processed' | 'failed' | 'ignored'>(),
+    processedAt: timestamp('processed_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index('idx_webhook_events_event_id').on(table.eventId)],
 );
 
 export type User = typeof users.$inferSelect;
